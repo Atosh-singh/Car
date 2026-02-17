@@ -1,44 +1,38 @@
 const express = require("express");
 const router = express.Router();
 
-const {
-  createRole,
-  getRoles,
-  updateRole,
-  deleteRole,
-} = require("../controllers/role");
+const {createCar, getCars, updateCar, deleteCar
+} = require('../controllers/car/index')
 
 const authMiddleware = require("../middlewares/auth.middleware");
 const permissionMiddleware = require("../middlewares/permission.middleware");
 
-// 🔐 Permission based role management
-
 router.post(
   "/",
   authMiddleware,
-  permissionMiddleware("CREATE_ROLE"),
-  createRole
+  permissionMiddleware("CREATE_CAR"),
+  createCar
 );
 
 router.get(
   "/",
   authMiddleware,
-  permissionMiddleware("VIEW_ROLE"),
-  getRoles
+  permissionMiddleware("VIEW_CAR"),
+  getCars
 );
 
 router.put(
   "/:id",
   authMiddleware,
-  permissionMiddleware("UPDATE_ROLE"),
-  updateRole
+  permissionMiddleware("UPDATE_CAR"),
+  updateCar
 );
 
 router.delete(
   "/:id",
   authMiddleware,
-  permissionMiddleware("DELETE_ROLE"),
-  deleteRole
+  permissionMiddleware("DELETE_CAR"),
+  deleteCar
 );
 
 module.exports = router;

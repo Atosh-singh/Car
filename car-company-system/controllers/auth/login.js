@@ -15,11 +15,16 @@ const login = async (req, res) => {
       });
     }
 
-    const user = await User.findOne({ email }).populate("role");
+    // 🔒 Only active users can login
+    const user = await User.findOne({
+      email,
+      removed: false,
+      enabled: true
+    }).populate("role");
 
     if (!user) {
       return res.status(404).json({
-        message: "User not found"
+        message: "User not found or disabled"
       });
     }
 

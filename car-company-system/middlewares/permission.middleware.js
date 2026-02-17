@@ -1,15 +1,54 @@
+const { User } = require("../models/User");
+
 const permissionMiddleware = (requiredPermission) => {
-  return (req, res, next) => {
+  return async (req, res, next) => {
+    try {
 
-    const userPermissions = req.user.permissions || [];
+      // 1️⃣ Ensure user authenticated
+      if (!req.user?.id) {
+        return res.status(401).json({
+          message: "Unauthorized"
+        });
+      }
 
-    if (!userPermissions.includes(requiredPermission)) {
-      return res.status(403).json({
-        message: "Access denied"
+      // 2️⃣ Get user with role
+      const user = await User.findById(req.user.id)
+        .populate("role");
+
+      if (!user || user.removed || !user.enabled) {
+        return res.status(401).json({
+          message: "User not active"
+        });
+      }
+
+      if (!user.role || user.role.removed || !user.role.enabled) {
+        return res.status(403).json({
+          message: "Role not active"
+        });
+      }
+
+      const permissions = user.role.permissions || [];
+
+      // 3️⃣ SUPER ADMIN shortcut
+      if (permissions.includes("ALL_ACCESS")) {
+        return next();
+      }
+
+      // 4️⃣ Required permission check
+      if (!permissions.includes(requiredPermission)) {
+        return res.status(403).json({
+          message: "Access Denied"
+        });
+      }
+
+      next();
+
+    } catch (error) {
+      console.error("Permission Middleware Error:", error);
+      return res.status(500).json({
+        message: "Internal Server Error"
       });
     }
-
-    next();
   };
 };
 

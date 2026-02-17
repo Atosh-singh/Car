@@ -3,7 +3,6 @@ const { User } = require("../../models/User");
 const { Role } = require("../../models/Role");
 
 const createUser = async (req, res) => {
-
   const { name, email, password, role, team } = req.body;
 
   if (!name || !email || !password || !role) {
@@ -20,11 +19,21 @@ const createUser = async (req, res) => {
     return res.status(404).json({ message: "Invalid role" });
   }
 
+  // 🚨 Only one Admin allowed
+  if (roleExist.name === "Admin") {
+    const adminExists = await User.findOne({ role });
+    if (adminExists) {
+      return res.status(403).json({
+        message: "Admin already exists. Only one admin allowed."
+      });
+    }
+  }
+
   const hashed = await bcrypt.hash(password, 10);
 
   const user = await User.create({
     name,
-    email,
+    email: email.toLowerCase().trim(),
     password: hashed,
     role,
     team

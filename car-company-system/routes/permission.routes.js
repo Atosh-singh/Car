@@ -3,10 +3,15 @@ const router = express.Router();
 
 const {
   createPermission,
-  getPermission,
+  getPermissions,
 } = require("../controllers/permission");
 
+const authMiddleware = require("../middlewares/auth.middleware");
+const adminMiddleware = require("../middlewares/admin.middleware");
+
+router.use(authMiddleware, adminMiddleware);
+
 router.post("/", createPermission);
-router.get("/", getPermission);
+router.get("/", getPermissions);
 
 module.exports = router;
