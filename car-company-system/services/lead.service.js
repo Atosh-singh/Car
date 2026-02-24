@@ -1,9 +1,13 @@
+const mongoose = require("mongoose");
 const { Lead } = require("../models/Lead");
+const { Car } = require("../models/Car");
+const { assignLeadToUser } = require("./leadAssignmentService");
 
-// CREATE
+
+// ================= CREATE =================
 const createLead = async (data) => {
 
-  // 🔍 Check duplicate phone (only active leads)
+  // 🔍 Duplicate phone check
   const existingLead = await Lead.findOne({
     phone: data.phone,
     removed: false
@@ -13,55 +17,124 @@ const createLead = async (data) => {
     throw new Error("Lead already exists with this phone number");
   }
 
-  return await Lead.create(data);
+  let assignedUser = null;
+  let assignedTeam = null;
+
+  // 🔥 Validate Car + Auto Assign
+  if (data.car) {
+
+    const carExist = await Car.findOne({
+      _id: data.car,
+      removed: false,
+      enabled: true
+    });
+
+    if (!carExist) {
+      throw new Error("Invalid or inactive car");
+    }
+
+    const assignment = await assignLeadToUser(data.car);
+
+    assignedUser = assignment.user;
+    assignedTeam = assignment.team;
+  }
+
+  const lead = await Lead.create({
+    ...data,
+    assignedTo: assignedUser?._id,
+    team: assignedTeam?._id,
+    status: "New",
+    assignmentHistory: assignedUser
+      ? [{ user: assignedUser._id }]
+      : []
+  });
+
+  // 🔥 Atomic increment
+  if (assignedUser) {
+    await assignedUser.updateOne({
+      $inc: { activeLeads: 1 }
+    });
+  }
+
+  return lead.populate("assignedTo team car");
 };
 
-// READ (only active leads)
-const getLeads = async (filter = {}) => {
-  const finalFilter = {
-    removed: false,
-    enabled: true,
-    ...filter,
-  };
 
-  return await Lead.find(finalFilter)
-    .populate("assignedTo", "name email")
-    .populate("car", "name type")
-    .populate("team", "name carType")
-    .sort({ createdAt: -1 });
-};
 
-// UPDATE
+// ================= UPDATE =================
 const updateLead = async (id, data) => {
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new Error("Invalid Lead ID");
+  }
+
+  // 🔒 Allowed fields only
+  const allowedFields = ["name", "email", "phone", "status"];
+
+  const updateData = {};
+
+  Object.keys(data).forEach(key => {
+    if (allowedFields.includes(key)) {
+      updateData[key] = data[key];
+    }
+  });
+
+  const updatedLead = await Lead.findOneAndUpdate(
+    { _id: id, removed: false },
+    { $set: updateData },
+    { new: true }
+  )
+    .populate("assignedTo", "name email")
+    .populate("team", "name")
+    .populate("car", "name");
+
+  return updatedLead;
+};
+
+
+
+// ================= SOFT DELETE =================
+const softDeleteLead = async (id) => {
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new Error("Invalid Lead ID");
+  }
+
   return await Lead.findOneAndUpdate(
     { _id: id, removed: false },
-    data,
+    { removed: true },
     { new: true }
   );
 };
 
 
-// SOFT DELETE
-const softDeleteLead = async (id) => {
-  return await Lead.findByIdAndUpdate(id, {
-    removed: true,
-    enabled: false,
-  });
-};
 
-// TOGGLE ENABLE
+// ================= TOGGLE ENABLE =================
 const toggleLeadStatus = async (id) => {
-  const lead = await Lead.findById(id);
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new Error("Invalid Lead ID");
+  }
+
+  const lead = await Lead.findOne({
+    _id: id,
+    removed: false
+  });
+
   if (!lead) return null;
 
   lead.enabled = !lead.enabled;
-  return await lead.save();
+
+  await lead.save();
+
+  return lead;
 };
+
+
 
 module.exports = {
   createLead,
-  getLeads,
   updateLead,
   softDeleteLead,
-  toggleLeadStatus,
+  toggleLeadStatus
 };

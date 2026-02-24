@@ -6,7 +6,7 @@ const createCar = async (req, res) => {
   try {
     const {
       name,
-      carType,
+      carType, // slug expected
       price,
       fuelType,
       transmission,
@@ -17,31 +17,40 @@ const createCar = async (req, res) => {
       image
     } = req.body;
 
-    // 1️⃣ Check carType exists
-    const typeExists = await CarType.findById(carType);
-
-    if (!typeExists) {
+    if (!name || !carType || !price || !fuelType || !transmission) {
       return res.status(400).json({
+        success: false,
+        message: "Required fields missing"
+      });
+    }
+
+    const type = await CarType.findOne({
+      slug: carType.toLowerCase(),
+      enabled: true
+    });
+
+    if (!type) {
+      return res.status(400).json({
+        success: false,
         message: "Invalid car type"
       });
     }
 
-    // 2️⃣ Generate slug
-    const slug = slugify(name, { lower: true });
+    const slug = slugify(name.trim(), { lower: true });
 
-    // 3️⃣ Check duplicate
     const existing = await Car.findOne({ slug });
 
     if (existing) {
       return res.status(409).json({
+        success: false,
         message: "Car already exists"
       });
     }
 
     const car = await Car.create({
-      name,
+      name: name.trim(),
       slug,
-      carType,
+      carType: type._id,
       price,
       fuelType,
       transmission,
@@ -60,6 +69,7 @@ const createCar = async (req, res) => {
   } catch (error) {
     console.error("Create Car Error:", error);
     res.status(500).json({
+      success: false,
       message: "Internal Server Error"
     });
   }

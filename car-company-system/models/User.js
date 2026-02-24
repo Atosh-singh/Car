@@ -36,12 +36,16 @@ const userSchema = new mongoose.Schema(
       ref: "Role",
       required: true
     },
+team: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "Team",
+  default: null
+},
 
-    team: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Team",
-      default: null
-    }
+activeLeads: {
+  type: Number,
+  default: 0
+}
   },
   { timestamps: true }
 );

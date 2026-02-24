@@ -3,55 +3,41 @@ const { User } = require("../models/User");
 
 const authMiddleware = async (req, res, next) => {
   try {
-    // 1️⃣ Check Authorization header
     const header = req.headers.authorization;
 
     if (!header || !header.startsWith("Bearer ")) {
-      return res.status(401).json({
-        message: "Unauthorized - No token provided"
-      });
+      return res.status(401).json({ message: "Unauthorized" });
     }
 
-    // 2️⃣ Extract token
     const token = header.split(" ")[1];
 
-    // 3️⃣ Verify token
     const decoded = jwt.verify(
       token,
       process.env.JWT_ACCESS_SECRET
     );
 
-    if (!decoded || !decoded.id) {
-      return res.status(401).json({
-        message: "Unauthorized - Invalid token"
-      });
-    }
-
-    // 4️⃣ Check user from DB
     const user = await User.findOne({
-      _id: decoded.id,
+      _id: decoded.id || decoded._id,
       removed: false,
       enabled: true
-    });
+    }).populate("role");
 
     if (!user) {
-      return res.status(401).json({
-        message: "Unauthorized - User not active"
-      });
+      return res.status(401).json({ message: "User not active" });
     }
 
-    // ✅ IMPORTANT: Consistent structure
+    // 🚀 Attach full context ONCE
     req.user = {
-      id: user._id
+      _id: user._id,
+      role: user.role?.name,
+      team: user.team,
+      permissions: user.role?.permissions || []
     };
 
     next();
 
   } catch (error) {
-    console.error("Auth Error:", error.message);
-    return res.status(401).json({
-      message: "Unauthorized"
-    });
+    return res.status(401).json({ message: "Unauthorized" });
   }
 };
 

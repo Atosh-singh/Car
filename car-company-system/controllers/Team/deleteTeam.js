@@ -14,26 +14,29 @@ const deleteTeam = async (req, res) => {
       });
     }
 
+    // 🔥 HARD DELETE
     if (hard === "true") {
       await Team.findByIdAndDelete(id);
 
-      return res.json({
+      return res.status(200).json({
         success: true,
         message: "Team permanently deleted"
       });
     }
 
+    // 🔥 SOFT DELETE (Default)
     team.removed = true;
+    team.enabled = false;
     await team.save();
 
-    res.json({
+    return res.status(200).json({
       success: true,
       message: "Team soft deleted"
     });
 
   } catch (error) {
     console.error("Delete Team Error:", error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Internal Server Error"
     });
