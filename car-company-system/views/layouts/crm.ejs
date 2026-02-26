@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title><%= title || "CRM Panel" %></title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/css/output.css">
+</head>
+
+<body class="bg-gray-100">
+
+<div id="appLayout" class="flex h-screen overflow-hidden">
+
+  <!-- Sidebar -->
+  <%- include("../partials/sidebar") %>
+
+  <!-- Main Content -->
+ <div id="mainContent"
+     class="flex-1 flex flex-col transition-all duration-300 ml-64 overflow-y-auto h-screen">
+
+    <%- include("../partials/header") %>
+
+    <main class="flex-1 p-8">
+      <%- body %>
+    </main>
+
+  </div>
+
+</div>
+
+<script src="/js/sidebar.js"></script>
+<script src="/js/leads.js"></script> <!-- Added -->
+
+</body>
+</html>

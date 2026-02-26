@@ -1,49 +1,28 @@
-const { Lead } = require("../../models/Lead");
+const { getLeadsForView } = require("../../services/lead.service");
 
 const getLead = async (req, res) => {
   try {
 
-    const { page = 1, limit = 10 } = req.query;
-    let filter = { removed: false };
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
 
-    // 🚀 SUPER ADMIN & ADMIN → See All
-    if (req.user.role === "SUPER_ADMIN" || req.user.role === "ADMIN") {
-      // no filter
-    }
+    const result = await getLeadsForView(page, limit);
 
-    else if (req.user.permissions.includes("LEAD_VIEW_TEAM")) {
-      filter.team = req.user.team;
-    }
+    console.log("SERVICE RESULT:", result);
+    console.log("Is data array?", Array.isArray(result.data));
 
-    else if (req.user.permissions.includes("LEAD_VIEW_OWN")) {
-      filter.assignedTo = req.user._id;
-    }
-
-    else {
-      return res.status(403).json({ message: "Access denied" });
-    }
-
-    const skip = (page - 1) * limit;
-
-    const [leads, total] = await Promise.all([
-      Lead.find(filter)
-        .populate("assignedTo", "name email")
-        .populate("team", "name")
-        .populate("car", "name")
-        .skip(skip)
-        .limit(Number(limit))
-        .lean(),
-
-      Lead.countDocuments(filter)
-    ]);
-
-    res.json({
-      data: leads,
-      total
+    res.render("crm/leads", {
+      layout: "layouts/crm",
+      title: "Leads",
+      currentPage: "leads",
+      user: req.user,
+      leads: result.data || [],   // 🔥 FORCE SAFE
+      pagination: result.pagination
     });
 
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Controller Error:", error);
+    res.status(500).json({ message: "Something went wrong" });
   }
 };
 

@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const { Lead } = require("../models/Lead");
 const { Car } = require("../models/Car");
 const { assignLeadToUser } = require("./leadAssignmentService");
+const paginate = require("../utils/pagination");
 
 
 // ================= CREATE =================
@@ -56,7 +57,10 @@ const createLead = async (data) => {
     });
   }
 
-  return lead.populate("assignedTo team car");
+  return lead
+    .populate("assignedTo", "name")
+    .populate("team", "name")
+    .populate("car", "name");
 };
 
 
@@ -68,7 +72,6 @@ const updateLead = async (id, data) => {
     throw new Error("Invalid Lead ID");
   }
 
-  // 🔒 Allowed fields only
   const allowedFields = ["name", "email", "phone", "status"];
 
   const updateData = {};
@@ -132,9 +135,33 @@ const toggleLeadStatus = async (id) => {
 
 
 
+// ================= GET FOR VIEW =================
+const getLeadsForView = async (page = 1, limit = 10) => {
+
+  const result = await paginate(
+    Lead,
+    { removed: false },
+    {
+      page,
+      limit,
+      populate: [
+        { path: "car", select: "name" },
+        { path: "team", select: "name" },
+        { path: "assignedTo", select: "name" }
+      ],
+      sort: { createdAt: -1 }
+    }
+  );
+
+  return result;
+};
+
+
+
 module.exports = {
   createLead,
   updateLead,
   softDeleteLead,
-  toggleLeadStatus
+  toggleLeadStatus,
+  getLeadsForView
 };

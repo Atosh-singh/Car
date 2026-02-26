@@ -1,0 +1,31 @@
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+
+  <div class="bg-white p-6 rounded-2xl shadow-md hover:shadow-lg transition">
+    <p class="text-gray-500 text-sm">Total Leads</p>
+    <h2 class="text-3xl font-bold mt-2 text-gray-800">
+      <%= overview.totalLeads %>
+    </h2>
+  </div>
+
+  <div class="bg-white p-6 rounded-2xl shadow-md hover:shadow-lg transition">
+    <p class="text-gray-500 text-sm">Today's Leads</p>
+    <h2 class="text-3xl font-bold mt-2 text-gray-800">
+      <%= todayLeads %>
+    </h2>
+  </div>
+
+  <div class="bg-white p-6 rounded-2xl shadow-md hover:shadow-lg transition">
+    <p class="text-gray-500 text-sm">Month Leads</p>
+    <h2 class="text-3xl font-bold mt-2 text-gray-800">
+      <%= monthLeads %>
+    </h2>
+  </div>
+
+  <div class="bg-white p-6 rounded-2xl shadow-md hover:shadow-lg transition">
+    <p class="text-gray-500 text-sm">Conversion Rate</p>
+    <h2 class="text-3xl font-bold mt-2 text-gray-800">
+      <%= overview.conversionRate %>%
+    </h2>
+  </div>
+
+</div>
