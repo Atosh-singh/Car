@@ -26,11 +26,11 @@ export const menuConfig = [
   },
 
   {
-    key: "/cars",
-    icon: <CarOutlined />,
-    label: "Cars",
-    permission: "VIEW_CAR"
-  },
+  key: "/google-meet",
+  label: "Google Meet",
+  icon: "🎥" // or Ant icon
+},
+ 
 
   {
     key: "/teams",
@@ -70,6 +70,13 @@ export const menuConfig = [
         label: "Permissions",
         permission: "VIEW_PERMISSION"
       },
+
+       {
+    key: "/cars",
+    icon: <CarOutlined />,
+    label: "Cars",
+    permission: "VIEW_CAR"
+  },
       {
   key: "/admin/permissions",
   icon: <SettingOutlined />,

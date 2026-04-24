@@ -12,6 +12,7 @@ const permissionRoutes = require("./permission.routes");
 const teamRoutes = require("./team.routes");
 const carRoutes = require("./car.routes");
 const carTypeRoutes = require("./carType.routes");
+const googleAuthRoutes = require("./googleAuthRoutes");
 
 router.use("/public", publicRoutes);
 
@@ -32,5 +33,7 @@ router.use("/teams", teamRoutes);
 router.use("/cars", carRoutes);
 
 router.use("/car-types", carTypeRoutes);
+
+router.use("/google", googleAuthRoutes);
 
 module.exports = router;

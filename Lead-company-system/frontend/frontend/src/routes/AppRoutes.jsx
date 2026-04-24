@@ -22,6 +22,8 @@ import Profile from "../pages/users/Profile";
 import EditProfile from "../pages/users/EditProfile";
 import PermissionMatrix from "../pages/admin/PermissionMatrix";
 
+import GoogleMeet from "../pages/GoogleMeet/GoogleMeet";
+
 function AppRoutes() {
   return (
     <BrowserRouter>
@@ -173,6 +175,17 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
+
+        <Route
+  path="/google-meet"
+  element={
+    <ProtectedRoute>
+      <CRMLayout>
+        <GoogleMeet />
+      </CRMLayout>
+    </ProtectedRoute>
+  }
+/>
 
         <Route
   path="/admin/permissions"
