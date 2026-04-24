@@ -3,7 +3,9 @@ const jwt = require("jsonwebtoken");
 const generateAccessToken = (user) => {
   return jwt.sign(
     {
-      id: user._id  // keep id since your middleware uses decoded.id
+      id: user._id,
+      role: user.role?.name,
+      permissions: user.role?.permissions || []
     },
     process.env.JWT_ACCESS_SECRET,
     { expiresIn: process.env.ACCESS_TOKEN_EXPIRY || "1d" }

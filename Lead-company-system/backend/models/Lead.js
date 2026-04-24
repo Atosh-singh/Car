@@ -92,7 +92,14 @@ const leadSchema = new mongoose.Schema(
       ref: "User"
     }
   }
-]
+],
+
+utm: {
+  source: { type: String },
+  medium: { type: String },
+  campaign: { type: String },
+  term: { type: String }
+},
   },
   { timestamps: true }
 );

@@ -1,122 +1,93 @@
-import { Table, Checkbox, Tooltip, Tag, Button } from "antd";
+import { Table, Select, Tag, Button, message } from "antd";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import { fetchRoles } from "../../redux/slices/roleSlice";
-import { fetchPermissions } from "../../redux/slices/permissionSlice";
+import { fetchRoles, updateRole } from "../../redux/slices/roleSlice";
 
 function PermissionMatrix() {
   const dispatch = useDispatch();
 
   const { roles } = useSelector((state) => state.roles);
-  const { permissions } = useSelector((state) => state.permissions);
 
-  const [matrix, setMatrix] = useState({});
+  const [localRoles, setLocalRoles] = useState([]);
 
   useEffect(() => {
     dispatch(fetchRoles());
-    dispatch(fetchPermissions());
   }, [dispatch]);
 
-  // 🧠 INIT MATRIX
   useEffect(() => {
-    const initial = {};
-
-    roles.forEach((role) => {
-      initial[role._id] = role.permissions || [];
-    });
-
-    setMatrix(initial);
+    setLocalRoles(roles || []);
   }, [roles]);
 
-  // 🔥 TOGGLE SINGLE
-  const handleToggle = (roleId, permName) => {
-    setMatrix((prev) => {
-      const current = prev[roleId] || [];
-
-      const updated = current.includes(permName)
-        ? current.filter((p) => p !== permName)
-        : [...current, permName];
-
-      return { ...prev, [roleId]: updated };
-    });
+  // ✅ HANDLE SCOPE CHANGE
+  const handleScopeChange = (roleId, value) => {
+    setLocalRoles((prev) =>
+      prev.map((role) =>
+        role._id === roleId ? { ...role, dataScope: value } : role
+      )
+    );
   };
 
-  // 🔥 SELECT ALL COLUMN
-  const handleSelectAll = (permName) => {
-    const updated = {};
+  // ✅ SAVE CHANGES
+  const handleSave = async () => {
+    try {
+      for (const role of localRoles) {
+        await dispatch(
+          updateRole({
+            id: role._id,
+            roleData: { dataScope: role.dataScope }
+          })
+        ).unwrap();
+      }
 
-    roles.forEach((role) => {
-      const current = matrix[role._id] || [];
-
-      updated[role._id] = current.includes(permName)
-        ? current.filter((p) => p !== permName)
-        : [...current, permName];
-    });
-
-    setMatrix(updated);
+      message.success("Roles updated successfully");
+    } catch (err) {
+      message.error("Failed to update roles");
+    }
   };
 
-  // 🎨 GROUP PERMISSIONS
-  const groupedPermissions = permissions.reduce((acc, perm) => {
-    const group = perm.name.split("_")[1] || "OTHER";
-
-    if (!acc[group]) acc[group] = [];
-    acc[group].push(perm);
-
-    return acc;
-  }, {});
-
-  // 🔥 COLUMNS
   const columns = [
     {
-      title: "Role",
+      title: "Role Name",
       dataIndex: "name",
-      fixed: "left",
-      width: 150
+      render: (name) => <Tag color="blue">{name}</Tag>
     },
-    ...Object.entries(groupedPermissions).flatMap(([group, perms]) =>
-      perms.map((perm) => ({
-        title: (
-          <Tooltip title={perm.description}>
-            <div style={{ textAlign: "center" }}>
-              <Tag color="blue">{group}</Tag>
-              <div>{perm.name}</div>
-
-              {/* ✅ SELECT ALL */}
-              <Checkbox
-                onChange={() => handleSelectAll(perm.name)}
-              />
-            </div>
-          </Tooltip>
-        ),
-        width: 150,
-        render: (_, role) => {
-          const checked = matrix[role._id]?.includes(perm.name);
-
-          return (
-            <Checkbox
-              checked={checked}
-              onChange={() => handleToggle(role._id, perm.name)}
-            />
-          );
-        }
-      }))
-    )
+    {
+      title: "Description",
+      dataIndex: "description",
+      render: (desc) => desc || "-"
+    },
+    {
+      title: "Data Scope",
+      render: (_, role) => (
+        <Select
+          value={role.dataScope || "OWN"}
+          style={{ width: 160 }}
+          onChange={(value) => handleScopeChange(role._id, value)}
+          options={[
+            { value: "OWN", label: "Own Leads" },
+            { value: "TEAM", label: "Team Leads" },
+            { value: "MULTI_TEAM", label: "Multiple Teams" },
+            { value: "ALL", label: "All Data" }
+          ]}
+        />
+      )
+    }
   ];
 
   return (
     <div>
-      {/* 🔥 SAVE BUTTON */}
+      {/* SAVE BUTTON */}
       <div style={{ marginBottom: 16, textAlign: "right" }}>
-        <Button type="primary">Save Changes</Button>
+        <Button type="primary" onClick={handleSave}>
+          Save Changes
+        </Button>
       </div>
 
       <Table
         columns={columns}
-        dataSource={roles}
+        dataSource={localRoles}
         rowKey="_id"
-        scroll={{ x: true }}
         pagination={false}
       />
     </div>

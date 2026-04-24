@@ -15,6 +15,7 @@ const {
 const authMiddleware = require("../middlewares/auth.middleware");
 const permissionMiddleware = require("../middlewares/permission.middleware");
 const cache = require("../middlewares/cache.middleware");
+const isTeamLeader = require("../middlewares/teamLeader.middleware");
 
 router.use(authMiddleware);
 
@@ -49,7 +50,21 @@ router.put(
   reassignLead
 );
 
+// Assign Lead
+router.put(
+  "/:id/assign",
+  permissionMiddleware("ASSIGN_LEAD"),
+  isTeamLeader, // 🔥 ADD THIS
+  assignLead
+);
 
+// Reassign Lead
+router.put(
+  "/:id/reassign",
+  permissionMiddleware("REASSIGN_LEAD"),
+  isTeamLeader, // 🔥 ADD THIS
+  reassignLead
+);
 
 router.put("/:id/assign", permissionMiddleware("ASSIGN_LEAD"), assignLead);
 

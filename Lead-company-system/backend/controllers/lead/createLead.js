@@ -3,7 +3,9 @@ const { clearCache } = require("../../utils/cacheInvalidator");
 
 const createLead = async (req, res) => {
   try {
-    let { name, phone, car, email, interest, source, locationData, website } = req.body;
+    let { name, phone, car, email, interest, source, locationData, utm_source,
+      utm_medium,
+      utm_campaign, website } = req.body;
 
     // 🛡 Honeypot protection
     if (website) {
@@ -13,9 +15,16 @@ const createLead = async (req, res) => {
       });
     }
 
+    // 🔧 Sanitization
     name = name?.trim();
     phone = phone?.trim();
+    email = email?.trim();
+    interest = interest?.trim();
+    source = source?.trim();
+    locationData = locationData?.trim();
 
+
+    // ❗ Required validation
     if (!name || !phone) {
       return res.status(400).json({
         success: false,
@@ -32,6 +41,7 @@ const createLead = async (req, res) => {
     }
 
     // 🔥 Just pass raw data to service
+     // 🔥 PASS CLEAN DATA TO SERVICE
     const lead = await leadService.createLead({
       name,
       phone,
@@ -39,9 +49,30 @@ const createLead = async (req, res) => {
       email,
       interest,
       source,
-      locationData
+      locationData,
+
+      // ✅ UTM SUPPORT (IMPORTANT)
+      utm: {
+        source: utm_source,
+        medium: utm_medium,
+        campaign: utm_campaign
+      }
     });
-    await clearCache("leads"); // ✅
+
+    // 🧹 Clear cache
+    await clearCache("leads");
+
+    // 🔔 SOCKET EMIT (SAFE)
+    if (global.io) {
+
+      if (lead.team) {
+        global.io.to(`team_${lead.team}`).emit("new_lead", lead);
+      }
+
+      if (lead.assignedTo) {
+        global.io.to(`user_${lead.assignedTo}`).emit("lead_assigned", lead);
+      }
+    }
 
     return res.status(201).json({
       success: true,
@@ -50,6 +81,8 @@ const createLead = async (req, res) => {
     });
 
   } catch (error) {
+
+    console.error("Create Lead Error:", error.message); // 🔥 logging
 
     if (error.message.includes("already exists")) {
       return res.status(409).json({

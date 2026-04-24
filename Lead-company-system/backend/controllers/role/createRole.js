@@ -1,17 +1,23 @@
 const { Role } = require("../../models/Role");
 const { Permission } = require("../../models/Permission");
-const { clearCache } = require("../../utils/cacheInvalidator"); // ✅ ADD
+const { clearCache } = require("../../utils/cacheInvalidator");
 
 const createRole = async (req, res) => {
   try {
-    const { name, description, permissions } = req.body;
+    let { name, description, permissions } = req.body;
 
+    // ✅ Validation
     if (!name || !permissions || !Array.isArray(permissions)) {
       return res.status(400).json({
         message: "Name and permissions are required"
       });
     }
 
+    // 🔧 Normalize
+    name = name.trim().toUpperCase();
+    permissions = permissions.map(p => p.trim().toUpperCase());
+
+    // ✅ Check role exists
     const existing = await Role.findOne({ name });
 
     if (existing) {
@@ -20,8 +26,9 @@ const createRole = async (req, res) => {
       });
     }
 
+    // ✅ Validate permissions by NAME (FIXED 🔥)
     const validPermissions = await Permission.find({
-      _id: { $in: permissions }
+      name: { $in: permissions }
     });
 
     if (validPermissions.length !== permissions.length) {
@@ -30,14 +37,15 @@ const createRole = async (req, res) => {
       });
     }
 
+    // ✅ Create role
     const role = await Role.create({
-      name: name.toUpperCase(),
+      name,
       description,
-      permissions
+      permissions // ✅ store as STRING ARRAY
     });
 
-    await clearCache("roles"); // ✅ ADD
-    await clearCache("users"); // ✅ ADD (role affects users)
+    await clearCache("roles");
+    await clearCache("users");
 
     return res.status(201).json(role);
 

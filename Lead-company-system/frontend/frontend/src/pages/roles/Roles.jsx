@@ -14,6 +14,7 @@ import { fetchPermissions } from "../../redux/slices/permissionSlice";
 import PageToolbar from "../../components/PageToolbar";
 import RoleForm from "../../components/roles/RoleForm";
 import RoleTable from "../../components/roles/RoleTable";
+import AppDrawer from "../../components/common/AppDrawer";
 
 function Roles() {
   const dispatch = useDispatch();
@@ -26,6 +27,8 @@ function Roles() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [editingRole, setEditingRole] = useState(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+const [drawerRole, setDrawerRole] = useState(null);
 
   useEffect(() => {
     dispatch(fetchRoles());
@@ -130,6 +133,21 @@ function Roles() {
     setEditingRole(null);
   };
 
+  const handleOpenDrawerCreate = () => {
+  setDrawerRole(null);
+  setDrawerOpen(true);
+};
+
+const handleOpenDrawerEdit = (role) => {
+  setDrawerRole(role);
+  setDrawerOpen(true);
+};
+
+const handleCloseDrawer = () => {
+  setDrawerOpen(false);
+  setDrawerRole(null);
+};
+
   return (
     <div>
       <PageToolbar
@@ -140,7 +158,7 @@ function Roles() {
           {
             label: "Add Role",
             type: "primary",
-            onClick: handleOpenCreateModal
+            onClick: handleOpenDrawerCreate
           }
         ]}
       />
@@ -149,7 +167,7 @@ function Roles() {
         data={filteredRoles}
         loading={loading}
         onRowClick={handleRowClick}
-        onEdit={handleOpenEditModal}
+        onEdit={ handleOpenDrawerCreate}
         onDelete={handleDelete}
         resolvePermissionName={resolvePermissionName}
       />
@@ -208,6 +226,22 @@ function Roles() {
           onSubmit={handleSubmit}
         />
       </Modal>
+
+<AppDrawer
+  title={drawerRole ? "Edit Role" : "Create Role"}
+  open={drawerOpen}
+  onClose={handleCloseDrawer}
+>
+  <RoleForm
+    initialValues={drawerRole}
+    permissions={permissions}
+    onSubmit={async (values) => {
+      await handleSubmit(values);
+      handleCloseDrawer();
+    }}
+  />
+</AppDrawer>
+
     </div>
   );
 }

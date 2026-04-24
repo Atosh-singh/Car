@@ -5,38 +5,31 @@ const permissionMiddleware = (requiredPermission) => {
     try {
 
       if (!req.user) {
-        return res.status(401).json({
-          message: "Unauthorized"
-        });
+        return res.status(401).json({ message: "Unauthorized" });
       }
 
-      // 🚀 SUPER_ADMIN bypass
-      if (req.user.role === "SUPER_ADMIN") {
-        return next();
-      }
+      const roleName = req.user.role?.toUpperCase();
 
-      // 🚀 ADMIN bypass
-      if (req.user.role === "ADMIN") {
-        return next();
-      }
+      // 🚀 SUPER ADMIN FULL ACCESS
+      if (roleName === "SUPER_ADMIN") return next();
 
-      // 🔐 Permission check
-      if (!req.user.permissions || !req.user.permissions.includes(requiredPermission)) {
+      // 🚀 ADMIN FULL ACCESS
+      if (roleName === "ADMIN") return next();
+
+      // 🔐 PERMISSION CHECK
+      if (!req.user.permissions?.includes(requiredPermission)) {
         return res.status(403).json({
-          message: "Access denied"
+          message: `Permission '${requiredPermission}' required`
         });
       }
 
       next();
 
     } catch (error) {
-
       console.error("Permission Middleware Error:", error);
-
       return res.status(500).json({
         message: "Internal Server Error"
       });
-
     }
   };
 };

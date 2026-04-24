@@ -29,7 +29,13 @@ const updateLead = async (req, res) => {
     // 🚀 Update using service
     const updatedLead = await leadService.updateLead(id, req.body);
 
-    await clearCache("leads"); // ✅
+    await clearCache("leads"); // 
+    
+    // after updatedLead
+
+if (updatedLead.team) {
+  global.io.to(`team_${updatedLead.team}`).emit("lead_updated", updatedLead);
+}
 
     res.status(200).json({
       message: "✅ Lead updated successfully",

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Modal, Descriptions, message } from "antd";
 import { useDispatch, useSelector } from "react-redux";
+import AppDrawer from "../../components/common/AppDrawer";
 
 import {
   fetchTeams,
@@ -22,6 +23,8 @@ function Teams() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [editingTeam, setEditingTeam] = useState(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+const [drawerTeam, setDrawerTeam] = useState(null);
 
   useEffect(() => {
     dispatch(fetchTeams());
@@ -86,6 +89,21 @@ function Teams() {
     setEditingTeam(null);
   };
 
+  const handleOpenDrawerCreate = () => {
+  setDrawerTeam(null);
+  setDrawerOpen(true);
+};
+
+const handleOpenDrawerEdit = (team) => {
+  setDrawerTeam(team);
+  setDrawerOpen(true);
+};
+
+const handleCloseDrawer = () => {
+  setDrawerOpen(false);
+  setDrawerTeam(null);
+};
+
   return (
     <div>
       <PageToolbar
@@ -96,7 +114,7 @@ function Teams() {
           {
             label: "Add Team",
             type: "primary",
-            onClick: handleOpenCreateModal
+            onClick: handleOpenDrawerCreate
           }
         ]}
       />
@@ -105,7 +123,7 @@ function Teams() {
         data={filteredTeams}
         loading={loading}
         onRowClick={handleRowClick}
-        onEdit={handleOpenEditModal}
+        onEdit={handleOpenDrawerEdit}
         onDelete={handleDelete}
       />
 
@@ -148,6 +166,20 @@ function Teams() {
           onSubmit={handleSubmit}
         />
       </Modal>
+
+      <AppDrawer
+  title={drawerTeam ? "Edit Team" : "Create Team"}
+  open={drawerOpen}
+  onClose={handleCloseDrawer}
+>
+  <TeamForm
+    initialValues={drawerTeam}
+    onSubmit={async (values) => {
+      await handleSubmit(values);
+      handleCloseDrawer();
+    }}
+  />
+</AppDrawer>
     </div>
   );
 }

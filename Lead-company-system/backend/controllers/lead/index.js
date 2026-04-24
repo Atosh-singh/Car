@@ -5,7 +5,7 @@ const { removeLead } = require("./removeLead");
 const { toggleLeadStatus } = require("./toggleLeadStatus");
 const { updateLeadStatus } = require("./updateLeadStatus");
 const { assignLead } = require("./assignLead");
-const {reassignLead} = required("./reassignLead.js")
+const {reassignLead} = require("./reassignLead")
 
 module.exports = {
 createLead,

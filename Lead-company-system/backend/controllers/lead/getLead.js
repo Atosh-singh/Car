@@ -15,7 +15,9 @@ const getLead = async (req, res) => {
       limit,
       search,
       status,
-      assignedTo
+      assignedTo,
+        // 🔥 PASS USER CONTEXT
+      user: req.user
     });
 
     res.json({

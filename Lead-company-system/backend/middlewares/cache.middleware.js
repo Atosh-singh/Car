@@ -5,7 +5,7 @@ const cache = (duration = 60, tag = null) => {
     try {
       if (req.method !== "GET") return next();
 
-      const cacheKey = `cache:${req.originalUrl}`;
+      const cacheKey = `cache:${req.user._id}:${req.originalUrl}`;
 
       const cached = await redis.get(cacheKey);
 

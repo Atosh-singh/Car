@@ -12,6 +12,7 @@ import {
 import PageToolbar from "../../components/PageToolbar";
 import PermissionForm from "../../components/permissions/PermissionForm";
 import PermissionTable from "../../components/permissions/PermissionTable";
+import AppDrawer from "../../components/common/AppDrawer";
 
 function Permissions() {
   const dispatch = useDispatch();
@@ -22,6 +23,10 @@ function Permissions() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [editingPermission, setEditingPermission] = useState(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+const [drawerPermission, setDrawerPermission] = useState(null);
+
+
 
   useEffect(() => {
     dispatch(fetchPermissions());
@@ -98,6 +103,21 @@ function Permissions() {
     setEditingPermission(null);
   };
 
+  const handleOpenDrawerCreate = () => {
+  setDrawerPermission(null);
+  setDrawerOpen(true);
+};
+
+const handleOpenDrawerEdit = (permission) => {
+  setDrawerPermission(permission);
+  setDrawerOpen(true);
+};
+
+const handleCloseDrawer = () => {
+  setDrawerOpen(false);
+  setDrawerPermission(null);
+};
+
   return (
     <div>
       <PageToolbar
@@ -108,7 +128,7 @@ function Permissions() {
           {
             label: "Add Permission",
             type: "primary",
-            onClick: handleOpenCreateModal
+            onClick: handleOpenDrawerCreate
           }
         ]}
       />
@@ -117,7 +137,7 @@ function Permissions() {
         data={filteredPermissions}
         loading={loading}
         onRowClick={handleRowClick}
-        onEdit={handleOpenEditModal}
+        onEdit={handleOpenDrawerEdit}
         onDelete={handleDelete}
       />
 
@@ -156,6 +176,20 @@ function Permissions() {
           onSubmit={handleSubmit}
         />
       </Modal>
+
+      <AppDrawer
+  title={drawerPermission ? "Edit Permission" : "Create Permission"}
+  open={drawerOpen}
+  onClose={handleCloseDrawer}
+>
+  <PermissionForm
+    initialValues={drawerPermission}
+    onSubmit={async (values) => {
+      await handleSubmit(values);
+      handleCloseDrawer();
+    }}
+  />
+</AppDrawer>
     </div>
   );
 }

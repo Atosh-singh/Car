@@ -8,7 +8,7 @@ const paginate = require("../utils/pagination");
 const createLead = async (data) => {
   const existingLead = await Lead.findOne({
     phone: data.phone,
-    removed: false
+    removed: false,
   });
 
   if (existingLead) {
@@ -22,14 +22,14 @@ const createLead = async (data) => {
     const carExist = await Car.findOne({
       _id: data.car,
       removed: false,
-      enabled: true
+      enabled: true,
     });
 
     if (!carExist) {
       throw new Error("Invalid or inactive car");
     }
 
-    const assignment = await assignLeadToUser(data.car);
+    const assignment = await assignLeadToUser(data);
 
     assignedUser = assignment.user;
     assignedTeam = assignment.team;
@@ -37,15 +37,25 @@ const createLead = async (data) => {
 
   const lead = await Lead.create({
     ...data,
+    utm: {
+      source: data.utm_source,
+      medium: data.utm_medium,
+      campaign: data.utm_campaign,
+    },
     assignedTo: assignedUser?._id,
     team: assignedTeam?._id,
     status: "New",
-    assignmentHistory: assignedUser ? [{ user: assignedUser._id }] : []
+    assignmentHistory: assignedUser
+  ? [{
+      user: assignedUser._id,
+      assignedAt: new Date()
+    }]
+  : [],
   });
 
   if (assignedUser) {
     await assignedUser.updateOne({
-      $inc: { activeLeads: 1 }
+      $inc: { activeLeads: 1 },
     });
   }
 
@@ -68,7 +78,7 @@ const updateLead = async (id, data) => {
     "status",
     "interest",
     "source",
-    "locationData"
+    "locationData",
   ];
 
   const updateData = {};
@@ -82,7 +92,7 @@ const updateLead = async (id, data) => {
   const updatedLead = await Lead.findOneAndUpdate(
     { _id: id, removed: false },
     { $set: updateData },
-    { new: true }
+    { new: true },
   )
     .populate("assignedTo", "name email")
     .populate("team", "name")
@@ -100,7 +110,7 @@ const softDeleteLead = async (id) => {
   return await Lead.findOneAndUpdate(
     { _id: id, removed: false },
     { removed: true },
-    { new: true }
+    { new: true },
   );
 };
 
@@ -112,7 +122,7 @@ const toggleLeadStatus = async (id) => {
 
   const lead = await Lead.findOne({
     _id: id,
-    removed: false
+    removed: false,
   });
 
   if (!lead) return null;
@@ -131,10 +141,11 @@ const getLeadsForView = async ({
   limit = 10,
   search = "",
   status = "",
-  assignedTo = ""
+  assignedTo = "",
+  user,
 } = {}) => {
   const query = {
-    removed: false
+    removed: false,
   };
 
   // 🔍 Search support
@@ -142,7 +153,7 @@ const getLeadsForView = async ({
     query.$or = [
       { name: { $regex: search, $options: "i" } },
       { phone: { $regex: search, $options: "i" } },
-      { email: { $regex: search, $options: "i" } }
+      { email: { $regex: search, $options: "i" } },
     ];
   }
 
@@ -151,25 +162,45 @@ const getLeadsForView = async ({
     query.status = status;
   }
 
+  // 🔥 DATA SCOPE LOGIC (MOST IMPORTANT)
+
+  if (user) {
+    // 🔒 OWN
+    if (user.dataScope === "OWN") {
+      query.assignedTo = user._id;
+    }
+
+    // 👥 TEAM + EXTRA TEAMS + EXTRA USERS
+    else if (user.dataScope === "TEAM") {
+      const teamIds = [
+        user.team,
+        ...(user.extraTeams || []).map((t) => t._id || t),
+      ];
+
+      query.$or = [
+        { team: { $in: teamIds } },
+        { assignedTo: { $in: user.extraUsers || [] } },
+      ];
+    }
+
+    // 👑 ALL → no restriction
+  }
+
   // ✅ Assigned user filter
   if (assignedTo && mongoose.Types.ObjectId.isValid(assignedTo)) {
     query.assignedTo = assignedTo;
   }
 
-  const result = await paginate(
-    Lead,
-    query,
-    {
-      page,
-      limit,
-      populate: [
-        { path: "car", select: "name" },
-        { path: "team", select: "name" },
-        { path: "assignedTo", select: "name email" }
-      ],
-      sort: { createdAt: -1 }
-    }
-  );
+  const result = await paginate(Lead, query, {
+    page,
+    limit,
+    populate: [
+      { path: "car", select: "name" },
+      { path: "team", select: "name" },
+      { path: "assignedTo", select: "name email" },
+    ],
+    sort: { createdAt: -1 },
+  });
 
   return result;
 };
@@ -182,7 +213,7 @@ const updateLeadStatus = async (leadId, status, userId) => {
 
   const lead = await Lead.findOne({
     _id: leadId,
-    removed: false
+    removed: false,
   });
 
   if (!lead) {
@@ -197,7 +228,7 @@ const updateLeadStatus = async (leadId, status, userId) => {
     from: previousStatus,
     to: status,
     changedBy: userId,
-    changedAt: new Date()
+    changedAt: new Date(),
   });
 
   await lead.save();
@@ -214,5 +245,5 @@ module.exports = {
   softDeleteLead,
   toggleLeadStatus,
   getLeadsForView,
-  updateLeadStatus
+  updateLeadStatus,
 };
